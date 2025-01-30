@@ -109,3 +109,74 @@ docker run -it \
   --name pg-pgadmin \
   dpage/pgadmin4
 
+
+
+
+-- ## Dockerizing the Ingestion script
+
+--1 creating script file 
+
+
+  (optional convert jupyter nb to script)
+  in bash 
+  jupyter nbconvert --to script pipeline.ipynb
+
+  (edit the script file as needed)
+
+ingest_data.py script input arguments 
+
+  URL="<https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2021-01.csv>"
+
+python ingest_data.py \
+  --user=root \
+  --password=root \
+  --host=localhost \
+  --port=5432 \
+  --db=ny_taxi \
+  --table_name=yellow_taxi_trips \
+  --url="${URL}"
+
+--2 Dockerfile for the script
+
+FROM python:3.9.1
+RUN apt-get install wget
+RUN pip install pandas sqlalchemy psycopg2
+WORKDIR /app
+COPY ingest_data.py ingest_data.py
+ENTRYPOINT ["python", "ingest_data.py"]
+
+
+--3 Build the image
+
+docker build -t taxi_ingest:v001
+
+--4 Run the image
+
+( run the postgres container again inside network as localhost will not work because for container localhost is the container itself)   
+
+(host data file locally with python http server and ipconfig to get the ip address)
+python -m http.server
+localhost:8000
+IPv4 Address example: 172.24.208.1:8000
+csv file url: http://
+
+URL="http://
+docker run -it \
+  --network=pg-network \
+  taxi_ingest:v001 \
+  --user=root \
+  --password=root \
+  --host=pg-database \
+  --port=5432 \
+  --db=ny_taxi \
+  --table_name=yellow_taxi_trips \
+  --url="${URL}"
+
+
+after configuring dockerfile 
+build the image
+run the container from the image
+
+
+--## postgres and pgadmin in docker-compose 
+

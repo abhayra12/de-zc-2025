@@ -16,4 +16,11 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=root
     ports:
       - "8080:80"
-    
+  data_ingest:
+    build: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - URL=${URL}
+    command: --user=root --password=root --host=pgdatabase --port=5432 --db=ny_taxi --table_name=yellow_taxi_data

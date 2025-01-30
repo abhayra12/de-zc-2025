@@ -1,2 +1,5 @@
 commands.txt
 script.ipynb
+ny_taxi_postgres_data/**
+.env
+output.csv 

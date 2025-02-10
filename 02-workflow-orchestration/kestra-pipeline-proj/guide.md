@@ -139,29 +139,33 @@ WHEN NOT MATCHED THEN
 ## Pipeline Flow Diagram
 
 ```mermaid
-graph TD
+graph LR
     A[Start] --> B[Input Selection]
     B --> C{Select Taxi Type}
-    C -->|Yellow| D1[Yellow Taxi Process]
-    C -->|Green| D2[Green Taxi Process]
     
-    subgraph "Data Processing"
-    D1 --> E1[Extract Data]
-    D1 --> F1[Create Tables]
-    F1 --> G1[Load to Staging]
-    G1 --> H1[Add Unique IDs]
-    H1 --> I1[Merge Data]
+    subgraph "Yellow Taxi Process"
+        C -->|Yellow| D1[Extract Data]
+        D1 -->|CSV| F1[Create Tables]
+        F1 --> G1[Load to Staging]
+        G1 --> H1[Add Unique IDs]
+        H1 --> I1[Merge to Main]
+    end
     
-    D2 --> E2[Extract Data]
-    D2 --> F2[Create Tables]
-    F2 --> G2[Load to Staging]
-    G2 --> H2[Add Unique IDs]
-    H2 --> I2[Merge Data]
+    subgraph "Green Taxi Process"
+        C -->|Green| D2[Extract Data]
+        D2 -->|CSV| F2[Create Tables]
+        F2 --> G2[Load to Staging]
+        G2 --> H2[Add Unique IDs]
+        H2 --> I2[Merge to Main]
     end
     
     I1 --> J[Purge Files]
     I2 --> J
     J --> K[End]
+
+    %% Data flow annotations
+    D1 -.->|"yellow_tripdata_*.csv"| G1
+    D2 -.->|"green_tripdata_*.csv"| G2
 ```
 
 ## Running the Pipeline

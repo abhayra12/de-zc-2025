@@ -136,6 +136,34 @@ WHEN NOT MATCHED THEN
   VALUES (S.unique_row_id, S.filename, /* other values */);
 ```
 
+## Pipeline Flow Diagram
+
+```mermaid
+graph TD
+    A[Start] --> B[Input Selection]
+    B --> C{Select Taxi Type}
+    C -->|Yellow| D1[Yellow Taxi Process]
+    C -->|Green| D2[Green Taxi Process]
+    
+    subgraph "Data Processing"
+    D1 --> E1[Extract Data]
+    D1 --> F1[Create Tables]
+    F1 --> G1[Load to Staging]
+    G1 --> H1[Add Unique IDs]
+    H1 --> I1[Merge Data]
+    
+    D2 --> E2[Extract Data]
+    D2 --> F2[Create Tables]
+    F2 --> G2[Load to Staging]
+    G2 --> H2[Add Unique IDs]
+    H2 --> I2[Merge Data]
+    end
+    
+    I1 --> J[Purge Files]
+    I2 --> J
+    J --> K[End]
+```
+
 ## Running the Pipeline
 
 1. Start Kestra and PostgreSQL:
@@ -194,6 +222,42 @@ unique_row_id          text    -- MD5 hash of key fields
 filename               text    -- Source file tracking
 ```
 
+## Understanding COALESCE Usage
+
+In our pipeline, we use COALESCE for generating unique row IDs. Here's why:
+
+```sql
+unique_row_id = md5(
+    COALESCE(CAST(VendorID AS text), '') ||
+    COALESCE(CAST(pickup_datetime AS text), '') || 
+    COALESCE(CAST(dropoff_datetime AS text), '') ||
+    -- ...other fields
+)
+```
+
+### Why COALESCE?
+
+1. **NULL Handling**: COALESCE returns the first non-NULL value in a list
+   - If VendorID is NULL → returns empty string ''
+   - Prevents NULL values from breaking the concatenation
+
+2. **Data Quality**:
+   - Ensures consistent unique ID generation even with missing data
+   - Empty string is better than NULL for concatenation
+
+3. **Deduplication Logic**:
+   - Creates consistent hashes for same trips
+   - Handles both clean and messy data reliably
+
+Example:
+```sql
+-- Without COALESCE
+'123' || NULL || '456'  → NULL
+
+-- With COALESCE
+'123' || COALESCE(NULL, '') || '456'  → '123456'
+```
+
 ## Useful Links
 
 - [NYC TLC Trip Data](https://github.com/DataTalksClub/nyc-tlc-data/releases)
@@ -205,3 +269,4 @@ filename               text    -- Source file tracking
 - The pipeline uses staging tables to prevent data corruption
 - Deduplication is handled via MD5 hashes of key fields
 - Data is merged using PostgreSQL's MERGE statement
+

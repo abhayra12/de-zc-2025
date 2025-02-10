@@ -274,3 +274,110 @@ Example:
 - Deduplication is handled via MD5 hashes of key fields
 - Data is merged using PostgreSQL's MERGE statement
 
+## Scheduled Pipeline Implementation
+
+The scheduled version (`02_postgres_taxi_scheduled.yaml`) automates the data ingestion process with the following modifications:
+
+### Key Changes from Base Pipeline
+
+1. **Simplified Input Parameters**
+   - Removed manual year/month selections
+   - Only taxi type remains as input parameter
+   - Date parameters derived from trigger timing
+
+2. **Dynamic Date Variables**
+   ```yaml
+   variables:
+     file: "{{inputs.taxi}}_tripdata_{{trigger.date | date('yyyy-MM')}}.csv"
+   ```
+
+3. **Concurrency Control**
+   ```yaml
+   concurrency:
+     limit: 1  # Prevents parallel execution issues
+   ```
+
+4. **Automated Scheduling**
+   ```yaml
+   triggers:
+     - id: green_schedule
+       type: io.kestra.plugin.core.trigger.Schedule
+       cron: "0 9 1 * *"  # 9 AM, 1st of each month
+       inputs:
+         taxi: green
+
+     - id: yellow_schedule
+       type: io.kestra.plugin.core.trigger.Schedule
+       cron: "0 10 1 * *"  # 10 AM, 1st of each month
+       inputs:
+         taxi: yellow
+   ```
+
+### Scheduled Flow Diagram
+
+```mermaid
+%%{init: {
+    'theme': 'base',
+    'themeVariables': {
+        'primaryColor': '#b3e5fc',
+        'secondaryColor': '#ffccbc',
+        'tertiaryColor': '#c8e6c9',
+        'noteTextColor': '#1a237e'
+    }
+}}%%
+graph LR
+    classDef trigger fill:#e1bee7,stroke:#4a148c,stroke-width:2px
+    classDef scheduler fill:#b2dfdb,stroke:#004d40,stroke-width:2px
+    classDef process fill:#bbdefb,stroke:#0d47a1,stroke-width:2px
+    classDef storage fill:#ffccbc,stroke:#bf360c,stroke-width:2px
+
+    T1[Green Taxi\n9 AM Monthly]:::trigger --> S[Scheduler]:::scheduler
+    T2[Yellow Taxi\n10 AM Monthly]:::trigger --> S
+    S --> C{Check\nConcurrency}
+    C -->|Limit=1| P[Process Data]:::process
+    P --> D[(PostgreSQL)]:::storage
+    
+    style C fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    
+    %% Annotations
+    subgraph "Schedule Management"
+        T1
+        T2
+        S
+    end
+    
+    subgraph "Execution Control"
+        C
+        P
+    end
+```
+
+### Backfilling Data
+
+To process historical data:
+
+1. From Kestra UI:
+   - Navigate to scheduled flow
+   - Click "Execute"
+   - Add label `backfill:true`
+   - Set appropriate trigger date
+   - Execute flow
+
+2. Monitor backfill progress:
+   - Check execution status
+   - Verify data in PostgreSQL
+   - Confirm proper deduplication
+
+### Schedule Management
+
+1. **Execution Order**
+   - Green taxi data: 9 AM on 1st of month
+   - Yellow taxi data: 10 AM on 1st of month
+   - One hour gap prevents resource contention
+
+2. **Concurrency Control**
+   - Single execution at a time
+   - Prevents data conflicts
+   - Queues concurrent triggers
+
+

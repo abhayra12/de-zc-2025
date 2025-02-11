@@ -394,17 +394,13 @@ The `03_postgres_dbt.yaml` flow orchestrates dbt models for transforming the tax
 ### Flow Structure
 
 ```mermaid
-graph TD
-    A[Start] --> B[Input Selection]
-    B --> C[Git Sync]
-    C --> D[DBT Build]
-    D --> E[Store Manifest]
-    E --> F[End]
-
-    style A fill:#2d3436,stroke:#fff,stroke-width:2px
-    style F fill:#2d3436,stroke:#fff,stroke-width:2px
-    style C fill:#00b894,stroke:#fff,stroke-width:2px
-    style D fill:#0984e3,stroke:#fff,stroke-width:2px
+graph LR
+    A([Start]) --> B[Input<br/>Selection] --> C[Git Sync] --> D[DBT Build] --> E[Store<br/>Manifest] --> F([End])
+    
+    style A fill:#2d3436,stroke:#fff
+    style F fill:#2d3436,stroke:#fff
+    style C fill:#00b894,stroke:#fff
+    style D fill:#0984e3,stroke:#fff
 ```
 
 ### Key Components
@@ -457,35 +453,32 @@ graph TD
 
 ```mermaid
 graph LR
-    A[Raw Data] --> B[Staging Models]
-    B --> C[Core Models]
-    
-    subgraph "Source Tables"
-        A1[yellow_tripdata]
-        A2[green_tripdata]
+    subgraph Source["Source Tables"]
+        Y[yellow_tripdata]
+        G[green_tripdata]
     end
-    
-    subgraph "Staging Layer"
-        B1[stg_yellow_trips]
-        B2[stg_green_trips]
+
+    subgraph Staging["Staging Models"]
+        SY[stg_yellow_trips]
+        SG[stg_green_trips]
     end
-    
-    subgraph "Core Layer"
-        C1[fact_trips]
-        C2[dim_zones]
+
+    subgraph Core["Core Models"]
+        F[fact_trips]
+        Z[dim_zones]
     end
+
+    Y --> SY --> F
+    G --> SG --> F
+    Z --- F
+
+    classDef source fill:#2d3436,stroke:#fff;
+    classDef staging fill:#00b894,stroke:#fff;
+    classDef core fill:#0984e3,stroke:#fff;
     
-    A1 --> B1
-    A2 --> B2
-    B1 --> C1
-    B2 --> C1
-    
-    style A1 fill:#2d3436
-    style A2 fill:#2d3436
-    style B1 fill:#00b894
-    style B2 fill:#00b894
-    style C1 fill:#0984e3
-    style C2 fill:#0984e3
+    class Y,G source;
+    class SY,SG staging;
+    class F,Z core;
 ```
 
 ### Troubleshooting

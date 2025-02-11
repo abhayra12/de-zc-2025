@@ -317,52 +317,44 @@ The scheduled version (`02_postgres_taxi_scheduled.yaml`) automates the data ing
 
 ```mermaid
 %%{init: {
-    'theme': 'base',
+    'theme': 'dark',
     'themeVariables': {
-        'primaryColor': '#b3e5fc',
-        'secondaryColor': '#ffccbc',
-        'tertiaryColor': '#c8e6c9',
-        'noteTextColor': '#1a237e'
+        'primaryColor': '#2d3436',
+        'primaryTextColor': '#fff',
+        'primaryBorderColor': '#fff',
+        'lineColor': '#fff',
+        'secondaryColor': '#384f5f',
+        'tertiaryColor': '#2f3640'
     }
 }}%%
-graph TD
-    classDef trigger fill:#e1bee7,stroke:#4a148c,stroke-width:2px
-    classDef task fill:#bbdefb,stroke:#0d47a1,stroke-width:2px
-    classDef storage fill:#ffccbc,stroke:#bf360c,stroke-width:2px
-    classDef condition fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+graph LR
+    T1(["Monthly Triggers"])
+    T1 -->|"Green (9 AM)"| L["Set Labels"]
+    T1 -->|"Yellow (10 AM)"| L
+    L --> E["Extract Data"]
+    E --> C{"Taxi Type?"}
+    
+    C -->|"Green"| G["Green Flow"]
+    G --> GT["Create Tables"] --> GS["Load Staging"] --> GU["Add Unique IDs"] --> GM["Merge Data"]
+    
+    C -->|"Yellow"| Y["Yellow Flow"]
+    Y --> YT["Create Tables"] --> YS["Load Staging"] --> YU["Add Unique IDs"] --> YM["Merge Data"]
+    
+    GM --> P["Purge Files"]
+    YM --> P
+    
+    GM --> DB[("PostgreSQL")]
+    YM --> DB
 
-    T1[Green Taxi Trigger\n9 AM Monthly]:::trigger --> S1[Set Labels]:::task
-    T2[Yellow Taxi Trigger\n10 AM Monthly]:::trigger --> S1
+    classDef trigger fill:#00b894,stroke:#fff,stroke-width:2px;
+    classDef process fill:#0984e3,stroke:#fff,stroke-width:2px;
+    classDef database fill:#6c5ce7,stroke:#fff,stroke-width:2px;
+    classDef condition fill:#00cec9,stroke:#fff,stroke-width:2px;
     
-    S1 --> E[Extract Data]:::task
-    E --> C{Taxi Type?}:::condition
-    
-    C -->|Green| G1[Create Tables]:::task
-    G1 --> G2[Load Staging]:::task
-    G2 --> G3[Add Unique IDs]:::task
-    G3 --> G4[Merge Data]:::task
-    
-    C -->|Yellow| Y1[Create Tables]:::task
-    Y1 --> Y2[Load Staging]:::task
-    Y2 --> Y3[Add Unique IDs]:::task
-    Y3 --> Y4[Merge Data]:::task
-    
-    G4 --> P[Purge Files]:::task
-    Y4 --> P
-    
-    G4 --> DB[(PostgreSQL)]:::storage
-    Y4 --> DB
-    
-    subgraph "Concurrency Control"
-        direction LR
-        L1[Limit: 1]
-    end
-    
-    %% File handling annotations
-    E -.->|Download| F1[CSV File]
-    F1 -.->|Process| G2
-    F1 -.->|Process| Y2
-    F1 -.->|Clean up| P
+    class T1 trigger;
+    class L,E,G,Y,GT,GS,GU,GM,YT,YS,YU,YM,P process;
+    class DB database;
+    class C condition;
 ```
 
 ### Backfilling Data

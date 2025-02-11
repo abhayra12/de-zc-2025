@@ -22,7 +22,9 @@ git clone https://github.com/DataTalksClub/data-engineering-zoomcamp.git
 ```
 kestra-pipeline-proj/
 ├── flows/
-│   └── 02_postgres_taxi.yaml    # Main pipeline definition
+│   ├── 02_postgres_taxi.yaml         # Main pipeline definition
+│   ├── 02_postgres_taxi_scheduled.yaml    # Scheduled version of the pipeline
+│   └── 03_postgres_dbt.yaml          # DBT transformation pipeline
 └── README.md                    # This file
 ```
 
@@ -384,5 +386,142 @@ To process historical data:
    - Single execution at a time
    - Prevents data conflicts
    - Queues concurrent triggers
+
+## DBT Flow Implementation
+
+The `03_postgres_dbt.yaml` flow orchestrates dbt models for transforming the taxi data.
+
+### Flow Structure
+
+```mermaid
+graph TD
+    A[Start] --> B[Input Selection]
+    B --> C[Git Sync]
+    C --> D[DBT Build]
+    D --> E[Store Manifest]
+    E --> F[End]
+
+    style A fill:#2d3436,stroke:#fff,stroke-width:2px
+    style F fill:#2d3436,stroke:#fff,stroke-width:2px
+    style C fill:#00b894,stroke:#fff,stroke-width:2px
+    style D fill:#0984e3,stroke:#fff,stroke-width:2px
+```
+
+### Key Components
+
+1. **Input Selection**
+   - `dbt build`: Regular model building
+   - `dbt debug`: Initial connection testing
+   ```yaml
+   inputs:
+     - id: dbt_command
+       type: SELECT
+       allowCustomValue: true
+       defaults: dbt build
+   ```
+
+2. **Git Sync Task**
+   - Pulls dbt models from data-engineering-zoomcamp repository
+   - Syncs to Namespace Files
+   - Can be disabled after initial setup
+
+3. **DBT Configuration**
+   - Uses `dbt-postgres` container image
+   - Configures database connection via profiles
+   - Stores model manifest for lineage tracking
+
+### Running the DBT Flow
+
+1. **First Time Setup**
+   ```bash
+   # Run with dbt debug first
+   Command: dbt debug
+   ```
+
+2. **Regular Model Building**
+   ```bash
+   # Build all models
+   Command: dbt build
+   ```
+
+3. **Database Configuration**
+   ```yaml
+   # Connection details
+   host: host.docker.internal
+   port: 5432
+   dbname: postgres-zc
+   schema: public
+   ```
+
+### Model Dependencies
+
+```mermaid
+graph LR
+    A[Raw Data] --> B[Staging Models]
+    B --> C[Core Models]
+    
+    subgraph "Source Tables"
+        A1[yellow_tripdata]
+        A2[green_tripdata]
+    end
+    
+    subgraph "Staging Layer"
+        B1[stg_yellow_trips]
+        B2[stg_green_trips]
+    end
+    
+    subgraph "Core Layer"
+        C1[fact_trips]
+        C2[dim_zones]
+    end
+    
+    A1 --> B1
+    A2 --> B2
+    B1 --> C1
+    B2 --> C1
+    
+    style A1 fill:#2d3436
+    style A2 fill:#2d3436
+    style B1 fill:#00b894
+    style B2 fill:#00b894
+    style C1 fill:#0984e3
+    style C2 fill:#0984e3
+```
+
+### Troubleshooting
+
+1. **Connection Issues**
+   - Verify database settings in profiles.yml
+   - Ensure PostgreSQL container is running
+   - Check host.docker.internal resolution
+
+2. **Model Failures**
+   - Review dbt logs in task output
+   - Verify source table existence
+   - Check schema configurations
+
+3. **Git Sync Problems**
+   - Confirm repository accessibility
+   - Verify branch name
+   - Check gitDirectory path
+
+### Best Practices
+
+1. **Development Workflow**
+   - Test with `dbt debug` first
+   - Review model SQL before building
+   - Monitor task execution logs
+
+2. **Production Setup**
+   - Disable Git sync after initial setup
+   - Use manifest storage for lineage
+   - Schedule after data ingestion completes
+
+3. **Maintenance**
+   - Regular manifest updates
+   - Monitor model performance
+   - Review transformation logic
+
+
 
 

@@ -325,31 +325,44 @@ The scheduled version (`02_postgres_taxi_scheduled.yaml`) automates the data ing
         'noteTextColor': '#1a237e'
     }
 }}%%
-graph LR
+graph TD
     classDef trigger fill:#e1bee7,stroke:#4a148c,stroke-width:2px
-    classDef scheduler fill:#b2dfdb,stroke:#004d40,stroke-width:2px
-    classDef process fill:#bbdefb,stroke:#0d47a1,stroke-width:2px
+    classDef task fill:#bbdefb,stroke:#0d47a1,stroke-width:2px
     classDef storage fill:#ffccbc,stroke:#bf360c,stroke-width:2px
+    classDef condition fill:#fff9c4,stroke:#f57f17,stroke-width:2px
 
-    T1[Green Taxi\n9 AM Monthly]:::trigger --> S[Scheduler]:::scheduler
-    T2[Yellow Taxi\n10 AM Monthly]:::trigger --> S
-    S --> C{Check\nConcurrency}
-    C -->|Limit=1| P[Process Data]:::process
-    P --> D[(PostgreSQL)]:::storage
+    T1[Green Taxi Trigger\n9 AM Monthly]:::trigger --> S1[Set Labels]:::task
+    T2[Yellow Taxi Trigger\n10 AM Monthly]:::trigger --> S1
     
-    style C fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    S1 --> E[Extract Data]:::task
+    E --> C{Taxi Type?}:::condition
     
-    %% Annotations
-    subgraph "Schedule Management"
-        T1
-        T2
-        S
+    C -->|Green| G1[Create Tables]:::task
+    G1 --> G2[Load Staging]:::task
+    G2 --> G3[Add Unique IDs]:::task
+    G3 --> G4[Merge Data]:::task
+    
+    C -->|Yellow| Y1[Create Tables]:::task
+    Y1 --> Y2[Load Staging]:::task
+    Y2 --> Y3[Add Unique IDs]:::task
+    Y3 --> Y4[Merge Data]:::task
+    
+    G4 --> P[Purge Files]:::task
+    Y4 --> P
+    
+    G4 --> DB[(PostgreSQL)]:::storage
+    Y4 --> DB
+    
+    subgraph "Concurrency Control"
+        direction LR
+        L1[Limit: 1]
     end
     
-    subgraph "Execution Control"
-        C
-        P
-    end
+    %% File handling annotations
+    E -.->|Download| F1[CSV File]
+    F1 -.->|Process| G2
+    F1 -.->|Process| Y2
+    F1 -.->|Clean up| P
 ```
 
 ### Backfilling Data

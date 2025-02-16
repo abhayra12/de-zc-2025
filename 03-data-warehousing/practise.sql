@@ -1,3 +1,5 @@
+-- DATA WAREHOUSING IN BIGQUERY
+
 -- Creating external table referring to gcs path
 CREATE OR REPLACE EXTERNAL TABLE `eastern-amp-449614-e1.de_03_DW.external_yellow_tripdata`
 OPTIONS (

@@ -19,7 +19,7 @@ BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024
 MONTHS = [f"{i:02d}" for i in range(1, 7)] 
 DOWNLOAD_DIR = "."
 
-CHUNK_SIZE = 8 * 1024 * 1024  
+CHUNK_SIZE = 5 * 1024 * 1024   # 5 MB chunk size
 
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 

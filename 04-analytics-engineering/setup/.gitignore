@@ -1,0 +1,3 @@
+gcs.json
+*.parquet
+*.csv.gz

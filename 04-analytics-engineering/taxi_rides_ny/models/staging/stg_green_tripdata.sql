@@ -4,6 +4,7 @@
     )
 }}
 
+
 with tripdata as 
 (
   select *,

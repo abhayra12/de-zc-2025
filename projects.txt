@@ -1,0 +1,11 @@
+project features 
+-------------------------------
+proj 1 
+
+
+
+------------------------------------------
+project 2:
+
+- Self healing data pipeline
+- build with cursor ai 

@@ -266,13 +266,6 @@ dbt build --select +fct_taxi_trips_quarterly_revenue.sql+ --vars '{is_test_run: 
 ```
 
 
-Check BigQuery:
-
-<br>
-
-![ae63](images/ae63.jpg)
-<br>
-
 
 **Answer: green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q1, worst: 2020/Q2}**
 
@@ -348,12 +341,8 @@ WHERE month = 4 AND year = 2020;
 ```
 
 
-**Check results:**
+**results:**
 
-<br>
-
-![ae64](images/ae64.jpg)
-<br>
 
 **Answer: green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}**
 
@@ -525,8 +514,4 @@ WHERE rank = 2;
 ```
 
 **Results**
-
-<br>
-
-![ae65](images/ae65.jpg)
-<br>
+**- LaGuardia Airport, Chinatown, Garment District**

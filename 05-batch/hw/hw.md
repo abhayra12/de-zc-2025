@@ -9,7 +9,7 @@
 What's the output?
 
 ```
-'3.3.2
+3.3.2
 ```
 
 ## Question 2: Yellow October 2024
